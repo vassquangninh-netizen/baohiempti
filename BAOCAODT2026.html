@@ -1,0 +1,570 @@
+[BAOCAODT2026.html](https://github.com/user-attachments/files/26085927/BAOCAODT2026.html)
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Doanh Thu Cán Bộ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { background-color: #f4f7f6; font-family: Arial, sans-serif; font-size: 14px; }
+        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .table-responsive { max-height: 600px; overflow-y: auto; }
+        th { position: sticky; top: 0; background-color: #0d6efd !important; color: white !important; z-index: 1; vertical-align: middle; white-space: nowrap; }
+        .text-right { text-align: right; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid py-3">
+    <h3 class="text-center text-primary mb-3">HỆ THỐNG TỔNG HỢP DOANH THU</h3>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-success text-white fw-bold">1. Danh sách & Kế hoạch</div>
+                <div class="card-body">
+                    <label class="form-label small fw-bold text-primary">A. Danh sách cán bộ chuẩn</label>
+                    <input type="file" id="fileCanBo" class="form-control form-control-sm mb-1" accept=".xlsx, .xls, .csv">
+                    <div id="statusCanBo" class="small fw-bold mb-3 text-muted">Chưa có dữ liệu</div>
+
+                    <label class="form-label small fw-bold text-primary">B. Kế hoạch (Tải để ghi đè nếu cần)</label>
+                    <input type="file" id="fileKeHoach" class="form-control form-control-sm mb-1" accept=".xlsx, .xls, .csv">
+                    <div id="statusKeHoach" class="small fw-bold text-muted"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white fw-bold">2. Nhập liệu Doanh thu</div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <label class="small fw-bold">Tháng</label>
+                            <select id="thangNhap" class="form-select form-select-sm">
+                                <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                                <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                                <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                                <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                                <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                                <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold">Năm</label>
+                            <select id="namNhap" class="form-select form-select-sm">
+                                <option value="2025">2025</option><option value="2026" selected>2026</option>
+                                <option value="2027">2027</option><option value="2028">2028</option>
+                                <option value="2029">2029</option><option value="2030">2030</option>
+                            </select>
+                        </div>
+                    </div>
+                    <input type="file" id="fileDuLieu" class="form-control form-control-sm mb-2" accept=".xlsx, .xls, .csv">
+                    <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="xuLyThemDuLieu()">Thêm dữ liệu</button>
+                    
+                    <button class="btn btn-outline-danger btn-sm w-100 fw-bold mt-2" onclick="xoaToanBoDuLieu()">Làm mới hệ thống (Xóa hết)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-secondary text-white fw-bold">File dữ liệu đã nhập</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-striped mb-0 text-center">
+                        <thead><tr><th>Kỳ</th><th>Tên File</th><th>Xóa</th></tr></thead>
+                        <tbody id="bangQuanLyFile"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center fw-bold">
+                    <span>Báo Cáo Tổng Hợp</span>
+                    <button class="btn btn-success btn-sm" onclick="xuatExcel()">Xuất Excel</button>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Năm so sánh</label>
+                            <select id="namXem" class="form-select form-select-sm" onchange="capNhatBaoCao()">
+                                <option value="2026">2025 vs 2026</option>
+                                <option value="2027">2026 vs 2027</option>
+                                <option value="2028">2027 vs 2028</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-0 small">Chế độ xem</label>
+                            <select id="cheDoXem" class="form-select form-select-sm" onchange="thayDoiCheDoXem()">
+                                <option value="nam">Cả Năm</option>
+                                <option value="thang">Theo Tháng</option>
+                                <option value="quy">Theo Quý</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-0 small">Chọn Kỳ (Tháng/Quý)</label>
+                            <select id="kyXem" class="form-select form-select-sm" onchange="capNhatBaoCao()" disabled>
+                                <option value="0">Tất cả</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label mb-0 small">Tìm kiếm</label>
+                            <input type="text" id="timKiem" class="form-control form-select-sm" placeholder="Nhập tên hoặc mã CB..." onkeyup="capNhatBaoCao()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle" id="bangBaoCao">
+                            <thead class="text-center">
+                                <tr>
+                                    <th>Mã NV</th>
+                                    <th>Tên cá nhân/ Phòng</th>
+                                    <th id="th_keHoach">Kế hoạch năm 2026</th>
+                                    <th id="th_ps_nt">Phát sinh (2025)</th>
+                                    <th id="th_bh_nt">Bảo hiểm (2025)</th>
+                                    <th id="th_tt_nt">Thực thu (2025)</th>
+                                    <th id="th_ps_ht">Phát sinh (2026)</th>
+                                    <th id="th_bh_ht">Bảo hiểm (2026)</th>
+                                    <th id="th_tt_ht">Thực thu (2026)</th>
+                                    <th>% HT so cùng kỳ</th>
+                                    <th>% HT Kế hoạch</th>
+                                </tr>
+                            </thead>
+                            <tbody id="duLieuBaoCao">
+                                <tr><td colspan="11" class="text-center text-muted">Vui lòng tải lên Danh sách cán bộ...</td></tr>
+                            </tbody>
+                            <tfoot id="tongCongBaoCao" class="fw-bold bg-light">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BIẾN TOÀN CỤC ---
+    let danhSachCanBo = []; 
+    let khoDuLieu = []; 
+
+    // --- TẢI DỮ LIỆU TỪ BỘ NHỚ LOCALSTORAGE (KHÔNG LO BỊ XÓA KHI TẮT WEB) ---
+    window.onload = function() {
+        try {
+            let savedCanBo = localStorage.getItem('danhSachCanBo');
+            if (savedCanBo) {
+                danhSachCanBo = JSON.parse(savedCanBo);
+                document.getElementById('statusCanBo').innerHTML = `<span class="text-success">Đã khôi phục: ${danhSachCanBo.length} cán bộ</span>`;
+            }
+            
+            let savedDuLieu = localStorage.getItem('khoDuLieu');
+            if (savedDuLieu) {
+                khoDuLieu = JSON.parse(savedDuLieu);
+                capNhatBangQuanLyFile();
+            }
+            
+            capNhatBaoCao();
+        } catch(e) {
+            console.error("Lỗi khi khôi phục dữ liệu: ", e);
+        }
+    };
+
+    function luuDuLieu() {
+        try {
+            localStorage.setItem('danhSachCanBo', JSON.stringify(danhSachCanBo));
+            localStorage.setItem('khoDuLieu', JSON.stringify(khoDuLieu));
+        } catch(e) {
+            alert("Lỗi: Bộ nhớ trình duyệt đã đầy. Vui lòng xóa bớt dữ liệu cũ!");
+        }
+    }
+
+    function xoaToanBoDuLieu() {
+        if(confirm("Bạn có chắc chắn muốn xóa TOÀN BỘ dữ liệu để làm lại từ đầu không?")) {
+            danhSachCanBo = [];
+            khoDuLieu = [];
+            localStorage.removeItem('danhSachCanBo');
+            localStorage.removeItem('khoDuLieu');
+            
+            document.getElementById('statusCanBo').innerHTML = '<span class="text-muted">Chưa có dữ liệu</span>';
+            document.getElementById('statusKeHoach').innerText = '';
+            document.getElementById('fileCanBo').value = '';
+            document.getElementById('fileKeHoach').value = '';
+            
+            capNhatBangQuanLyFile();
+            capNhatBaoCao();
+            alert("Đã xóa sạch hệ thống thành công!");
+        }
+    }
+
+    // --- 1A. ĐỌC DANH SÁCH CÁN BỘ ---
+    document.getElementById('fileCanBo').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+                let headerRow = -1;
+                let colMaNV = -1, colTenNV = -1, colKH = -1;
+
+                // Tự động quét để tìm đúng cột
+                for (let i = 0; i < Math.min(20, excelData.length); i++) {
+                    for (let j = 0; j < excelData[i].length; j++) {
+                        let cell = (excelData[i][j] || '').toString().toLowerCase().trim();
+                        if (cell.includes('mã nv') || cell.includes('ma nv') || cell.includes('mã cán bộ')) colMaNV = j;
+                        if (cell.includes('cá nhân') || cell.includes('phòng') || cell.includes('phong')) colTenNV = j;
+                        if (cell.includes('kế hoạch') || cell.includes('ke hoach') || cell.includes('chỉ tiêu')) colKH = j;
+                    }
+                    if (colMaNV !== -1) {
+                        headerRow = i;
+                        break;
+                    }
+                }
+
+                // Nếu không tìm thấy dòng tiêu đề, đặt mặc định dựa trên file của bạn
+                if (colMaNV === -1) { colMaNV = 2; colTenNV = 1; headerRow = 0; }
+
+                danhSachCanBo = [];
+                let countKeHoach = 0;
+
+                for (let i = headerRow + 1; i < excelData.length; i++) {
+                    if (!excelData[i]) continue;
+                    let ma = (excelData[i][colMaNV] || '').toString().trim();
+                    let ten = colTenNV !== -1 ? (excelData[i][colTenNV] || '').toString().trim() : '';
+                    let khRaw = colKH !== -1 ? (excelData[i][colKH] || '0').toString().replace(/,/g, '') : '0';
+                    let kh = parseFloat(khRaw) || 0;
+                    
+                    let maLower = ma.toLowerCase();
+                    if (ma !== '' && !maLower.includes('mã nv') && !maLower.includes('ma nv') && !maLower.includes('tổng cộng')) {
+                        if(!danhSachCanBo.find(cb => cb.maNV === ma)) {
+                            danhSachCanBo.push({maNV: ma, tenNV: ten, keHoach: kh});
+                            if (kh > 0) countKeHoach++;
+                        }
+                    }
+                }
+
+                if (danhSachCanBo.length === 0) throw new Error("File không có dữ liệu nhân sự bên dưới dòng tiêu đề!");
+
+                let msg = `Thành công: Đã tải ${danhSachCanBo.length} cán bộ`;
+                if (colKH !== -1 && countKeHoach > 0) msg += `<br><small>(Hệ thống đã tự lấy Kế hoạch của ${countKeHoach} người)</small>`;
+                
+                document.getElementById('statusCanBo').innerHTML = `<span class="text-success">${msg}</span>`;
+                document.getElementById('fileKeHoach').value = '';
+                document.getElementById('statusKeHoach').innerText = '';
+                
+                luuDuLieu(); 
+                capNhatBaoCao();
+            } catch (err) {
+                alert("Lỗi tải Danh sách cán bộ: " + err.message);
+                document.getElementById('statusCanBo').innerHTML = `<span class="text-danger">Lỗi: Cấu trúc file không đúng</span>`;
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    // --- 1B. ĐỌC FILE KẾ HOẠCH (GHI ĐÈ KẾ HOẠCH NẾU TẢI FILE RIÊNG) ---
+    document.getElementById('fileKeHoach').addEventListener('change', function(e) {
+        if (danhSachCanBo.length === 0) {
+            alert("Vui lòng tải 'Danh sách cán bộ chuẩn' ở Mục A trước!");
+            this.value = ''; 
+            return;
+        }
+
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const excelData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+                let headerRow = -1;
+                let colMaNV = -1, colKH = -1;
+
+                for (let i = 0; i < Math.min(20, excelData.length); i++) {
+                    for (let j = 0; j < excelData[i].length; j++) {
+                        let cell = (excelData[i][j] || '').toString().toLowerCase().trim();
+                        if (cell.includes('mã nv') || cell.includes('ma nv') || cell.includes('cb_ql')) colMaNV = j;
+                        if (cell.includes('kế hoạch') || cell.includes('ke hoach') || cell.includes('chỉ tiêu')) colKH = j;
+                    }
+                    if (colMaNV !== -1 && colKH !== -1) {
+                        headerRow = i;
+                        break;
+                    }
+                }
+
+                if (colMaNV === -1 || colKH === -1) throw new Error("Không tìm thấy cột 'Mã NV' hoặc cột 'Kế hoạch'");
+
+                danhSachCanBo.forEach(cb => cb.keHoach = 0); // Xóa kế hoạch cũ
+                let soNguoiCapNhat = 0;
+
+                for (let i = headerRow + 1; i < excelData.length; i++) {
+                    if (!excelData[i]) continue;
+                    let ma = (excelData[i][colMaNV] || '').toString().trim();
+                    let khRaw = (excelData[i][colKH] || '0').toString().replace(/,/g, '');
+                    let kh = parseFloat(khRaw) || 0;
+                    
+                    if (ma !== '') {
+                        let canBo = danhSachCanBo.find(cb => cb.maNV === ma);
+                        if (canBo) {
+                            canBo.keHoach = kh;
+                            soNguoiCapNhat++;
+                        }
+                    }
+                }
+
+                document.getElementById('statusKeHoach').innerHTML = `<span class="text-success">Thành công: Đã ghi đè KH cho ${soNguoiCapNhat} người</span>`;
+                luuDuLieu(); 
+                capNhatBaoCao();
+            } catch (err) {
+                alert("Lỗi tải Kế hoạch: " + err.message);
+                document.getElementById('statusKeHoach').innerHTML = `<span class="text-danger">Lỗi: ${err.message}</span>`;
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    // --- 2. THÊM DỮ LIỆU DOANH THU (NÉN DỮ LIỆU ĐỂ WEB CHẠY SIÊU NHẸ) ---
+    function xuLyThemDuLieu() {
+        const thang = parseInt(document.getElementById('thangNhap').value);
+        const nam = parseInt(document.getElementById('namNhap').value);
+        const fileInput = document.getElementById('fileDuLieu');
+        
+        if (fileInput.files.length === 0) return alert("Vui lòng chọn file Excel dữ liệu!");
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                let allSheetData = [];
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const sheetData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                    allSheetData = allSheetData.concat(sheetData);
+                });
+
+                // Nén dữ liệu: Chỉ cộng dồn tổng tiền của mỗi mã cán bộ, tránh việc bộ nhớ bị đầy
+                let aggregatedMap = {};
+                allSheetData.forEach(row => {
+                    let keyMaNV = Object.keys(row).find(k => k.toLowerCase().includes('cb_ql') || k.toLowerCase().includes('mã nv') || k.toLowerCase().includes('ma nv')) || 'CB_QL';
+                    let maNV = (row[keyMaNV] || '').toString().trim();
+                    
+                    if (maNV && maNV.toLowerCase() !== 'cb_ql') {
+                        let keyPS = Object.keys(row).find(k => k.toLowerCase().includes('phi_ps')) || 'PHI_PS';
+                        let keyBH = Object.keys(row).find(k => k.toLowerCase().includes('phi_bh')) || 'PHI_BH';
+                        let keyTT = Object.keys(row).find(k => k.toLowerCase().includes('phi_tt')) || 'PHI_TT';
+
+                        let ps = parseFloat((row[keyPS] || '0').toString().replace(/,/g, '')) || 0;
+                        let bh = parseFloat((row[keyBH] || '0').toString().replace(/,/g, '')) || 0;
+                        let tt = parseFloat((row[keyTT] || '0').toString().replace(/,/g, '')) || 0;
+                        
+                        if (!aggregatedMap[maNV]) aggregatedMap[maNV] = { ps: 0, bh: 0, tt: 0 };
+                        aggregatedMap[maNV].ps += ps;
+                        aggregatedMap[maNV].bh += bh;
+                        aggregatedMap[maNV].tt += tt;
+                    }
+                });
+
+                let nendata = Object.keys(aggregatedMap).map(maNV => ({
+                    maNV: maNV,
+                    ps: aggregatedMap[maNV].ps,
+                    bh: aggregatedMap[maNV].bh,
+                    tt: aggregatedMap[maNV].tt
+                }));
+
+                const quy = Math.ceil(thang / 3);
+                khoDuLieu.push({
+                    id: Date.now(),
+                    thang: thang,
+                    quy: quy,
+                    nam: nam,
+                    tenFile: file.name,
+                    duLieu: nendata 
+                });
+                
+                fileInput.value = ''; 
+                luuDuLieu(); 
+                capNhatBangQuanLyFile();
+                capNhatBaoCao();
+                alert(`Thành công: Đã thêm dữ liệu Tháng ${thang}/${nam}!`);
+            } catch(err) {
+                alert("Lỗi đọc file Dữ liệu: Cấu trúc file không đúng chuẩn.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function capNhatBangQuanLyFile() {
+        const tbody = document.getElementById('bangQuanLyFile');
+        tbody.innerHTML = '';
+        khoDuLieu.forEach(item => {
+            tbody.innerHTML += `<tr>
+                <td>T${item.thang}/${item.nam}</td>
+                <td title="${item.tenFile}">${item.tenFile.substring(0, 15)}...</td>
+                <td><button class="btn btn-danger btn-sm py-0" onclick="xoaFile(${item.id})">X</button></td>
+            </tr>`;
+        });
+    }
+
+    function xoaFile(id) {
+        khoDuLieu = khoDuLieu.filter(item => item.id !== id);
+        luuDuLieu(); 
+        capNhatBangQuanLyFile();
+        capNhatBaoCao();
+    }
+
+    // --- 3. ĐIỀU KHIỂN CHẾ ĐỘ XEM ---
+    function thayDoiCheDoXem() {
+        const cheDo = document.getElementById('cheDoXem').value;
+        const kyXem = document.getElementById('kyXem');
+        kyXem.innerHTML = '';
+        
+        if (cheDo === 'nam') {
+            kyXem.disabled = true;
+            kyXem.innerHTML = '<option value="0">Cả năm</option>';
+        } else if (cheDo === 'thang') {
+            kyXem.disabled = false;
+            for(let i=1; i<=12; i++) kyXem.innerHTML += `<option value="${i}">Tháng ${i}</option>`;
+        } else if (cheDo === 'quy') {
+            kyXem.disabled = false;
+            for(let i=1; i<=4; i++) kyXem.innerHTML += `<option value="${i}">Quý ${i}</option>`;
+        }
+        capNhatBaoCao();
+    }
+
+    // --- 4. TÍNH TOÁN & HIỂN THỊ BÁO CÁO ---
+    function capNhatBaoCao() {
+        if (danhSachCanBo.length === 0) {
+            document.getElementById('duLieuBaoCao').innerHTML = '<tr><td colspan="11" class="text-center text-muted">Vui lòng tải lên Danh sách cán bộ...</td></tr>';
+            document.getElementById('tongCongBaoCao').innerHTML = '';
+            return;
+        }
+
+        const namHT = parseInt(document.getElementById('namXem').value);
+        const namTruoc = namHT - 1;
+        const cheDo = document.getElementById('cheDoXem').value;
+        const ky = parseInt(document.getElementById('kyXem').value);
+        const tuKhoa = (document.getElementById('timKiem').value || '').toLowerCase().trim();
+
+        document.getElementById('th_keHoach').innerText = `Kế hoạch năm ${namHT}`;
+        document.getElementById('th_ps_nt').innerText = `Phát sinh (${namTruoc})`;
+        document.getElementById('th_bh_nt').innerText = `Bảo hiểm (${namTruoc})`;
+        document.getElementById('th_tt_nt').innerText = `Thực thu (${namTruoc})`;
+        document.getElementById('th_ps_ht').innerText = `Phát sinh (${namHT})`;
+        document.getElementById('th_bh_ht').innerText = `Bảo hiểm (${namHT})`;
+        document.getElementById('th_tt_ht').innerText = `Thực thu (${namHT})`;
+
+        let ketQua = danhSachCanBo.map(cb => ({
+            maNV: cb.maNV, tenNV: cb.tenNV,
+            keHoach: cb.keHoach, 
+            ht_PS: 0, ht_BH: 0, ht_TT: 0,
+            nt_PS: 0, nt_BH: 0, nt_TT: 0
+        }));
+
+        let mapKetQua = {};
+        ketQua.forEach(item => mapKetQua[item.maNV] = item);
+
+        // Cộng dồn từ dữ liệu đã nén
+        khoDuLieu.forEach(file => {
+            let isNamHT = (file.nam === namHT);
+            let isNamTruoc = (file.nam === namTruoc);
+            
+            if (!isNamHT && !isNamTruoc) return; 
+            if (cheDo === 'thang' && file.thang !== ky) return; 
+            if (cheDo === 'quy' && file.quy !== ky) return; 
+
+            file.duLieu.forEach(row => {
+                if (mapKetQua[row.maNV]) {
+                    if (isNamHT) {
+                        mapKetQua[row.maNV].ht_PS += row.ps;
+                        mapKetQua[row.maNV].ht_BH += row.bh;
+                        mapKetQua[row.maNV].ht_TT += row.tt;
+                    } else {
+                        mapKetQua[row.maNV].nt_PS += row.ps;
+                        mapKetQua[row.maNV].nt_BH += row.bh;
+                        mapKetQua[row.maNV].nt_TT += row.tt;
+                    }
+                }
+            });
+        });
+
+        const tbody = document.getElementById('duLieuBaoCao');
+        tbody.innerHTML = '';
+        
+        let tong_keHoach = 0;
+        let tong_ht_PS = 0, tong_ht_BH = 0, tong_ht_TT = 0;
+        let tong_nt_PS = 0, tong_nt_BH = 0, tong_nt_TT = 0;
+
+        ketQua.forEach(item => {
+            let chuoitim = (item.maNV + " " + item.tenNV).toLowerCase();
+            if (tuKhoa && !chuoitim.includes(tuKhoa)) return;
+
+            let tyLeCungKy = item.nt_TT > 0 ? ((item.ht_TT / item.nt_TT) * 100).toFixed(2) + '%' : (item.ht_TT > 0 ? '100%' : '0%');
+            let tyLeKeHoach = item.keHoach > 0 ? ((item.ht_TT / item.keHoach) * 100).toFixed(2) + '%' : '0%';
+
+            tong_keHoach += item.keHoach;
+            tong_ht_PS += item.ht_PS; tong_ht_BH += item.ht_BH; tong_ht_TT += item.ht_TT;
+            tong_nt_PS += item.nt_PS; tong_nt_BH += item.nt_BH; tong_nt_TT += item.nt_TT;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.maNV}</td>
+                    <td class="text-start">${item.tenNV}</td>
+                    <td class="text-right">${dinhDangTien(item.keHoach)}</td>
+                    <td class="text-right">${dinhDangTien(item.nt_PS)}</td>
+                    <td class="text-right">${dinhDangTien(item.nt_BH)}</td>
+                    <td class="text-right text-primary fw-bold">${dinhDangTien(item.nt_TT)}</td>
+                    <td class="text-right">${dinhDangTien(item.ht_PS)}</td>
+                    <td class="text-right">${dinhDangTien(item.ht_BH)}</td>
+                    <td class="text-right text-primary fw-bold">${dinhDangTien(item.ht_TT)}</td>
+                    <td class="text-center fw-bold ${parseFloat(tyLeCungKy) >= 100 ? 'text-success' : 'text-danger'}">${tyLeCungKy}</td>
+                    <td class="text-center fw-bold ${parseFloat(tyLeKeHoach) >= 100 ? 'text-success' : 'text-danger'}">${tyLeKeHoach}</td>
+                </tr>
+            `;
+        });
+
+        let tyLeTongCungKy = tong_nt_TT > 0 ? ((tong_ht_TT / tong_nt_TT) * 100).toFixed(2) + '%' : '0%';
+        let tyLeTongKeHoach = tong_keHoach > 0 ? ((tong_ht_TT / tong_keHoach) * 100).toFixed(2) + '%' : '0%';
+        
+        document.getElementById('tongCongBaoCao').innerHTML = `
+            <tr>
+                <td colspan="2" class="text-center text-danger">TỔNG CỘNG</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_keHoach)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_nt_PS)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_nt_BH)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_nt_TT)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_ht_PS)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_ht_BH)}</td>
+                <td class="text-right text-danger">${dinhDangTien(tong_ht_TT)}</td>
+                <td class="text-center text-danger">${tyLeTongCungKy}</td>
+                <td class="text-center text-danger">${tyLeTongKeHoach}</td>
+            </tr>
+        `;
+    }
+
+    function dinhDangTien(so) {
+        return Math.round(so).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // --- 5. XUẤT EXCEL ---
+    function xuatExcel() {
+        let table = document.getElementById("bangBaoCao");
+        let wb = XLSX.utils.table_to_book(table, {sheet: "BaoCaoDoanhThu"});
+        XLSX.writeFile(wb, "Bao_Cao_Doanh_Thu.xlsx");
+    }
+</script>
+
+</body>
+</html>
