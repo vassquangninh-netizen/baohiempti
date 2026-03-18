@@ -1,0 +1,437 @@
+[3Tinhphibaohiem.html](https://github.com/user-attachments/files/26083895/3Tinhphibaohiem.html)
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hệ Thống Tính Phí PTI Quảng Ninh 8.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 10px; }
+        .container { max-width: 850px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; text-align: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px; font-size: 22px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 14px; }
+        input[type="text"], input[type="number"], select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        .checkbox-group { background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee; }
+        .checkbox-group label { display: inline-block; font-weight: normal; margin-right: 20px; font-size: 15px; cursor: pointer; }
+        .checkbox-group input[type="checkbox"] { transform: scale(1.2); margin-right: 8px; }
+        .btn { padding: 14px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; color: white; transition: background 0.3s;}
+        .btn-upload { background-color: #28a745; }
+        .btn-upload:hover { background-color: #218838; }
+        .btn-calc { background-color: #f37021; }
+        .btn-calc:hover { background-color: #d95e16; }
+        .btn-word { background-color: #0056b3; display: none; margin-top: 15px; }
+        .btn-word:hover { background-color: #004494; }
+        .btn-clear { background-color: #dc3545; padding: 8px 15px; font-size: 13px; margin-top: 10px; width: auto; display: inline-block;}
+        .upload-box { border: 2px dashed #28a745; padding: 15px; border-radius: 5px; background-color: #f0fff0; margin-bottom: 20px; text-align: center;}
+        .result-box { margin-top: 25px; padding: 15px; background-color: #e9f5ff; border: 1px solid #b8daff; border-radius: 4px; display: none; }
+        .result-box h3 { margin-top: 0; color: #004085; font-size: 18px; }
+        .result-box ul { padding-left: 20px; }
+        .result-box li { margin-bottom: 8px; font-size: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        #uploadStatus { color: #d9534f; font-weight: bold; font-size: 15px; margin-top: 10px; word-wrap: break-word; }
+        
+        .box-hino { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; display: none; }
+        .box-hino label { color: #856404; font-weight: bold; margin: 0; }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            h2 { font-size: 18px; }
+            .grid-2 { grid-template-columns: 1fr; gap: 0; } 
+            .checkbox-group label { display: block; margin-bottom: 12px; } 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>APP TÍNH PHÍ PTI QUẢNG NINH (PRO 8.0)</h2>
+    
+    <div class="upload-box">
+        <label>⚙️ HỆ THỐNG DỮ LIỆU BIỂU PHÍ</label>
+        <div id="uploadStatus">Trạng thái: Chưa có dữ liệu. Hãy nạp file biểu phí!</div>
+        
+        <div id="uploadControl" style="margin-top: 15px;">
+            <input type="file" id="fileBieuPhi" accept=".xlsx, .xls, .csv">
+            <button class="btn btn-upload" onclick="napDuLieu()">📥 NẠP BIỂU PHÍ</button>
+        </div>
+        
+        <button id="btnClear" class="btn btn-clear" style="display: none;" onclick="xoaDuLieu()">🗑️ Xóa dữ liệu cũ & Nạp file mới</button>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; padding-top: 15px;">
+        <label style="color:#0056b3; font-size: 16px; font-weight: bold;">⚙️ THÔNG TIN TÍNH PHÍ</label>
+        
+        <div class="form-group" style="margin-top: 10px;">
+            <label>Phân nhóm rủi ro (Loại xe)</label>
+            <select id="loaiXe" onchange="togglePhanLoai()">
+                <option value="xe_con">1. Xe con chở người đến 9 chỗ KHÔNG KDVT, xe Van</option>
+                <option value="pickup">2. Xe pickup</option>
+                <option value="xe_dien">3. Xe chở người 4 bánh có động cơ (Xe điện DL, nhà máy)</option>
+                <option value="bus_noi_tinh">4. Xe chở người không KDVT trên 9 chỗ; Xe bus nội tỉnh</option>
+                <option value="khach_hd_tren_9">5. Xe chở khách Hợp Đồng trên 9 chỗ</option>
+                <option value="xe_chuyen_dung">6. Xe chuyên dùng; Romooc chuyên dùng</option>
+                <option value="bus_lien_tinh">7. Xe khách liên tỉnh; Xe bus liên tỉnh</option>
+                <option value="xe_tai">8. Xe tải (Bao gồm xe bảo ôn)</option>
+                <option value="dau_keo">9. Xe đầu kéo; Đông lạnh; Xe tải khai thác khoáng sản</option>
+                <option value="ro_mooc">10. Rơ móc</option>
+                <option value="taxi_cong_nghe">11. Xe taxi công nghệ (Grab, Bee, GSM...)</option>
+                <option value="xe_con_kdvt">12. Xe con chở người KDVT đến 9 chỗ</option>
+                <option value="taxi_truyen_thong">13. Xe Taxi truyền thống có mào</option>
+                <option value="demo_test_drive">14. Xe Demo-Test Drive (Chỉ áp dụng xe chở người)</option>
+            </select>
+        </div>
+
+        <div id="divTaiTrong" class="grid-2" style="display: none; margin-bottom: 15px;">
+            <div class="form-group">
+                <label style="color:#d9534f;">Tải trọng (Tấn) - Dành cho Xe Tải</label>
+                <input type="number" id="taiTrong" value="3">
+            </div>
+            <div class="box-hino" id="boxHino">
+                <label><input type="checkbox" id="isHino" style="transform: scale(1.3); margin-right: 8px;"> Thương hiệu HINO (+5% phí)</label>
+            </div>
+        </div>
+
+        <div id="divRomooc" class="form-group" style="display: none; background:#e9ecef; padding: 10px; border-radius:5px;">
+            <label style="color:#d9534f;">Phân loại Rơ móc</label>
+            <select id="loaiRomooc">
+                <option value="satsi">Rơ móc sát si (Rơ móc thường)</option>
+                <option value="ben">Rơ móc Ben (Tự đổ)</option>
+            </select>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group"><label>Giá trị xe (VNĐ)</label><input type="number" id="giaTriXe" value="700000000"></div>
+            <div class="form-group"><label>Năm sản xuất</label><input type="number" id="namSX" value="2022"></div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group"><label>Hãng/Model xe</label><input type="text" id="modelXe" placeholder="VD: Mazda 3" value="Mazda 3"></div>
+            <div class="form-group"><label>Biển kiểm soát</label><input type="text" id="bienSo" placeholder="VD: 14A-888.88" value="14A-888.88"></div>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <label style="font-weight: bold; display: block; margin-bottom: 10px;">Điều khoản bổ sung:</label>
+            <label><input type="checkbox" id="bs02" checked> BS02 (Thay mới)</label>
+            <label><input type="checkbox" id="bs05" checked> BS05 (Chính hãng)</label>
+            <label><input type="checkbox" id="bs06" checked> BS06 (Thủy kích)</label>
+        </div>
+
+        <button class="btn btn-calc" onclick="tinhPhi()">🧮 TÍNH PHÍ BẢO HIỂM</button>
+    </div>
+
+    <div class="result-box" id="ketQua">
+        <h3>KẾT QUẢ TÍNH PHÍ</h3>
+        <p id="txtThongTin" style="font-size: 14px; line-height: 1.5;"></p>
+        <ul id="txtChiTietPhi"></ul>
+        <h4 id="txtTongPhi" style="color: red; font-size: 18px; text-align: center; background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ffcccc;"></h4>
+        <p id="txtPhiSan" style="font-style: italic; color: #555; font-size: 13px;"></p>
+    </div>
+
+    <button class="btn btn-word" id="btnExportWord" onclick="xuatFileWord()">📥 TẢI BẢN CHÀO PHÍ (WORD)</button>
+</div>
+
+<script>
+    const formatTien = (so) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(so);
+    
+    // Hàm loại bỏ dấu Tiếng Việt để tránh lỗi font khi quét Excel
+    function removeAccents(str) {
+        if (!str) return "";
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+    }
+
+    let bieuPhiData = [];
+    let isDataLoaded = false;
+    let dataExport = "";
+
+    window.onload = function() {
+        const savedData = localStorage.getItem('ptiBieuPhiData');
+        const savedName = localStorage.getItem('ptiFileName');
+        if (savedData && savedName) {
+            bieuPhiData = JSON.parse(savedData);
+            isDataLoaded = true;
+            document.getElementById('uploadStatus').style.color = "#28a745";
+            document.getElementById('uploadStatus').innerHTML = `✅ Đang dùng bộ dữ liệu: <b>${savedName}</b><br><i style="font-size:12px;">(Đã lưu tự động trong máy)</i>`;
+            document.getElementById('uploadControl').style.display = 'none';
+            document.getElementById('btnClear').style.display = 'inline-block';
+        }
+    };
+
+    function xoaDuLieu() {
+        if(confirm("Bạn có chắc chắn muốn xóa dữ liệu biểu phí hiện tại để tải file mới?")) {
+            localStorage.removeItem('ptiBieuPhiData');
+            localStorage.removeItem('ptiFileName');
+            location.reload(); 
+        }
+    }
+
+    function togglePhanLoai() {
+        const loai = document.getElementById('loaiXe').value;
+        if (loai === 'xe_tai') {
+            document.getElementById('divTaiTrong').style.display = 'grid';
+            document.getElementById('boxHino').style.display = 'block';
+        } else {
+            document.getElementById('divTaiTrong').style.display = 'none';
+        }
+        document.getElementById('divRomooc').style.display = (loai === 'ro_mooc') ? 'block' : 'none';
+    }
+
+    function napDuLieu() {
+        if (typeof XLSX === 'undefined') { alert("Lỗi: Không tải được thư viện. Hãy kiểm tra mạng Internet!"); return; }
+        const fileInput = document.getElementById('fileBieuPhi');
+        const file = fileInput.files[0];
+        const statusEl = document.getElementById('uploadStatus');
+
+        if (!file) { alert("Sếp chưa chọn file biểu phí!"); return; }
+
+        statusEl.style.color = "#f37021";
+        statusEl.innerHTML = `⏳ Đang xử lý 14 nhóm dữ liệu xe...`;
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            try {
+                let workbook;
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    workbook = XLSX.read(e.target.result, {type: 'string', raw: true});
+                } else {
+                    workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                }
+
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                bieuPhiData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                
+                if (bieuPhiData.length > 5) {
+                    isDataLoaded = true;
+                    localStorage.setItem('ptiBieuPhiData', JSON.stringify(bieuPhiData));
+                    localStorage.setItem('ptiFileName', file.name);
+
+                    statusEl.style.color = "#28a745";
+                    statusEl.innerHTML = `✅ Đã lưu thành công <b>${bieuPhiData.length}</b> dòng từ ${file.name}.<br><i style="font-size:12px;">Đã sẵn sàng cho mọi loại xe!</i>`;
+                    document.getElementById('uploadControl').style.display = 'none';
+                    document.getElementById('btnClear').style.display = 'inline-block';
+                } else { throw new Error("File trống hoặc sai chuẩn."); }
+            } catch (error) {
+                statusEl.style.color = "red";
+                statusEl.innerHTML = `❌ Lỗi xử lý: ${error.message}`;
+            }
+        };
+
+        if (file.name.toLowerCase().endsWith('.csv')) { reader.readAsText(file, 'UTF-8'); } 
+        else { reader.readAsArrayBuffer(file); }
+    }
+
+    function tinhPhi() {
+        if (!isDataLoaded) { alert("Vui lòng tải file biểu phí để kích hoạt hệ thống!"); return; }
+
+        const selectedLoaiXe = document.getElementById('loaiXe').value; 
+        const modelXe = document.getElementById('modelXe').value;
+        const bienSo = document.getElementById('bienSo').value;
+        const namSX = parseInt(document.getElementById('namSX').value) || 2026;
+        const giaTriXe = parseInt(document.getElementById('giaTriXe').value) || 0;
+        
+        const tuoiXe = 2026 - namSX; 
+        const giaTriTrieu = giaTriXe / 1000000;
+
+        let currentLoaiXeKey = "xe_con"; 
+        let currentGiaTriText = ""; 
+        let currentHeSoSan = 1;     
+        let foundRow = null;
+
+        // VÒNG LẶP QUÉT TRÍ TUỆ NHÂN TẠO 
+        for (let i = 0; i < bieuPhiData.length; i++) {
+            let row = bieuPhiData[i];
+            if (!row || row.length < 2) continue;
+
+            let col1 = String(row[1]).trim(); 
+            let col2 = row.length > 2 ? String(row[2]).trim() : ""; 
+            let colSan = row.length > 9 ? String(row[9]).trim() : ""; 
+            
+            let c1 = removeAccents(col1);
+            let c2 = removeAccents(col2);
+
+            // XỬ LÝ NHẬN DIỆN 14 NHÓM XE CHÍNH
+            if (c1 !== "") {
+                let isMainCategory = false;
+                if (c1.includes("xe con cho nguoi") && c1.includes("khong kdvt")) { currentLoaiXeKey = "xe_con"; isMainCategory = true; }
+                else if (c1.includes("pickup")) { currentLoaiXeKey = "pickup"; isMainCategory = true; }
+                else if (c1.includes("bon banh co gan dong co")) { currentLoaiXeKey = "xe_dien"; isMainCategory = true; }
+                else if (c1.includes("tren 9 cho") && c1.includes("bus noi tinh")) { currentLoaiXeKey = "bus_noi_tinh"; isMainCategory = true; }
+                else if (c1.includes("khach hd tren 9 cho")) { currentLoaiXeKey = "khach_hd_tren_9"; isMainCategory = true; }
+                else if (c1.includes("xe chuyen dung")) { currentLoaiXeKey = "xe_chuyen_dung"; isMainCategory = true; }
+                else if (c1.includes("khach lien tinh") || c1.includes("bus lien tinh")) { currentLoaiXeKey = "bus_lien_tinh"; isMainCategory = true; }
+                else if (c1.includes("xe tai (bao gom")) { currentLoaiXeKey = "xe_tai"; isMainCategory = true; }
+                else if (c1.includes("xe dau keo")) { currentLoaiXeKey = "dau_keo"; isMainCategory = true; }
+                else if (c1.includes("ro moc") && !c1.includes("ben") && !c1.includes("sat si")) { currentLoaiXeKey = "ro_mooc"; isMainCategory = true; }
+                else if (c1.includes("taxi cong nghe")) { currentLoaiXeKey = "taxi_cong_nghe"; isMainCategory = true; }
+                else if (c1.includes("xe con cho nguoi") && c1.includes("kinh doanh van tai")) { currentLoaiXeKey = "xe_con_kdvt"; isMainCategory = true; }
+                else if (c1.includes("taxi truyen thong")) { currentLoaiXeKey = "taxi_truyen_thong"; isMainCategory = true; }
+                else if (c1.includes("demo-test drive")) { currentLoaiXeKey = "demo_test_drive"; isMainCategory = true; }
+
+                currentGiaTriText = c1; // Lưu giữ dòng định danh hiện tại
+            }
+
+            if (colSan !== "") currentHeSoSan = parseFloat(colSan);
+
+            // KIỂM TRA ĐIỀU KIỆN 1: TUỔI XE (Hoặc Không phân cấp)
+            if (!c2.includes("nam") && !c2.includes("khong phan cap")) continue;
+
+            let isMatchTuoi = false;
+            if (tuoiXe < 3 && c2.includes("duoi 3")) isMatchTuoi = true;
+            else if (tuoiXe >= 3 && tuoiXe < 6 && (c2.includes("den duoi 6") || c2.includes("den 6"))) isMatchTuoi = true;
+            else if (tuoiXe >= 6 && tuoiXe < 10 && (c2.includes("den duoi 10") || c2.includes("den 10"))) isMatchTuoi = true;
+            else if (tuoiXe >= 10 && (c2.includes("10 nam den") || c2.includes("den 15"))) isMatchTuoi = true;
+            else if (c2.includes("khong phan cap")) isMatchTuoi = true;
+
+            // KIỂM TRA ĐIỀU KIỆN 2: KHUNG GIÁ TRỊ / TẢI TRỌNG
+            let isMatchGia = false;
+            
+            let nonSubclassTypes = ["xe_dien", "bus_noi_tinh", "khach_hd_tren_9", "xe_chuyen_dung", "dau_keo", "demo_test_drive"];
+            if (nonSubclassTypes.includes(currentLoaiXeKey)) { isMatchGia = true; } // Nhóm không có chia giá
+
+            let priceTypes = ["xe_con", "pickup", "taxi_cong_nghe", "xe_con_kdvt", "taxi_truyen_thong"];
+            if (priceTypes.includes(currentLoaiXeKey)) {
+                if (giaTriTrieu < 200 && currentGiaTriText.includes("duoi 200")) isMatchGia = true;
+                else if (giaTriTrieu < 300 && currentGiaTriText.includes("200") && currentGiaTriText.includes("300")) isMatchGia = true;
+                else if (giaTriTrieu >= 300 && giaTriTrieu < 400 && currentGiaTriText.includes("300") && currentGiaTriText.includes("400")) isMatchGia = true;
+                else if (giaTriTrieu >= 300 && giaTriTrieu < 500 && currentGiaTriText.includes("300") && currentGiaTriText.includes("500")) isMatchGia = true;
+                else if (giaTriTrieu >= 400 && giaTriTrieu < 600 && currentGiaTriText.includes("400") && currentGiaTriText.includes("600")) isMatchGia = true;
+                else if (giaTriTrieu >= 500 && currentGiaTriText.includes("500") && currentGiaTriText.includes("tro len")) isMatchGia = true;
+                else if (giaTriTrieu >= 600 && giaTriTrieu < 800 && currentGiaTriText.includes("600") && currentGiaTriText.includes("800")) isMatchGia = true;
+                else if (giaTriTrieu >= 800 && giaTriTrieu < 1000 && currentGiaTriText.includes("800") && currentGiaTriText.includes("1 ty")) isMatchGia = true;
+                else if (giaTriTrieu >= 1000 && giaTriTrieu < 1500 && currentGiaTriText.includes("1 ty") && currentGiaTriText.includes("1,5 ty")) isMatchGia = true;
+                else if (giaTriTrieu >= 1500 && giaTriTrieu < 3000 && currentGiaTriText.includes("1,5 ty") && currentGiaTriText.includes("3 ty")) isMatchGia = true;
+                else if (giaTriTrieu >= 3000 && currentGiaTriText.includes("3 ty") && currentGiaTriText.includes("tro len")) isMatchGia = true;
+            }
+
+            if (currentLoaiXeKey === "bus_lien_tinh") {
+                if (giaTriTrieu < 2000 && currentGiaTriText.includes("duoi 2 ty")) isMatchGia = true;
+                else if (giaTriTrieu >= 2000 && currentGiaTriText.includes("tu 2 ty") && currentGiaTriText.includes("tro len")) isMatchGia = true;
+            }
+
+            if (currentLoaiXeKey === "xe_tai") {
+                let taiTrong = parseFloat(document.getElementById('taiTrong').value) || 0;
+                if (taiTrong < 3 && currentGiaTriText.includes("duoi 03 tan")) isMatchGia = true;
+                else if (taiTrong >= 3 && taiTrong <= 8 && currentGiaTriText.includes("3 den 8 tan")) isMatchGia = true;
+                else if (taiTrong > 8 && taiTrong <= 15 && currentGiaTriText.includes("8 tan den 15 tan")) isMatchGia = true;
+                else if (taiTrong > 15 && currentGiaTriText.includes("15 tan tro len")) isMatchGia = true;
+            }
+
+            if (currentLoaiXeKey === "ro_mooc") {
+                let loaiRM = document.getElementById('loaiRomooc').value;
+                if (loaiRM === "satsi" && currentGiaTriText.includes("sat si")) isMatchGia = true;
+                else if (loaiRM === "ben" && currentGiaTriText.includes("ben")) isMatchGia = true;
+            }
+
+            // CHỐT KẾT QUẢ NẾU KHỚP CẢ 3 TIÊU CHÍ
+            if (currentLoaiXeKey === selectedLoaiXe && isMatchTuoi && isMatchGia) {
+                foundRow = row;
+                break; 
+            }
+        }
+
+        if (!foundRow) {
+            alert("KHÔNG TÌM THẤY: Đã dò hết 315 dòng của file biểu phí nhưng không có quy định cho chiếc xe này. Sếp kiểm tra lại Tuổi xe hoặc Giá trị/Tải trọng xem có bị lệch khung không nhé!");
+            return;
+        }
+
+        let heSoSan = currentHeSoSan;
+        
+        let phiCoBanVal = String(foundRow[3]).toLowerCase().replace(/,/g, '').trim();
+        let tyLeCoBan = 0; let phiCoBanTien = 0;
+        
+        if (phiCoBanVal.includes("dong")) {
+            phiCoBanTien = parseFloat(phiCoBanVal);
+            tyLeCoBan = phiCoBanTien / giaTriXe; 
+        } else {
+            tyLeCoBan = parseFloat(phiCoBanVal) || 0;
+            phiCoBanTien = giaTriXe * tyLeCoBan;
+        }
+
+        // TÍNH PHỤ PHÍ 5% THƯƠNG HIỆU HINO
+        let isHino = document.getElementById('isHino').checked && selectedLoaiXe === 'xe_tai';
+        if (isHino) {
+            tyLeCoBan = tyLeCoBan * 1.05;
+            phiCoBanTien = phiCoBanTien * 1.05;
+        }
+
+        let tyLeBS02 = document.getElementById('bs02').checked ? (parseFloat(foundRow[4]) || 0) : 0;
+        let tyLeBS05 = document.getElementById('bs05').checked ? (parseFloat(foundRow[5]) || 0) : 0;
+        let tyLeBS06 = document.getElementById('bs06').checked ? (parseFloat(foundRow[6]) || 0) : 0;
+
+        const tongTyLe = tyLeCoBan + tyLeBS02 + tyLeBS05 + tyLeBS06;
+        const tongThanhToan = phiCoBanTien + (giaTriXe * (tyLeBS02 + tyLeBS05 + tyLeBS06));
+        const phiSan = tongThanhToan * heSoSan; 
+
+        // HIỂN THỊ LÊN GIAO DIỆN
+        document.getElementById('ketQua').style.display = 'block';
+        document.getElementById('btnExportWord').style.display = 'block';
+        
+        const loaiXeText = document.getElementById('loaiXe').options[document.getElementById('loaiXe').selectedIndex].text;
+        const hinoText = isHino ? "<br><b style='color:#d9534f;'>* Đã áp dụng cộng 5% phí thương hiệu HINO</b>" : "";
+
+        document.getElementById('txtThongTin').innerHTML = `
+            <b style="color:green;">✔ Quét dữ liệu thành công!</b> Áp dụng chuẩn cột: [Tuổi: ${tuoiXe} năm]<br>
+            <b>Nhóm:</b> ${loaiXeText}<br>
+            <b>Thông tin xe:</b> ${modelXe} | BKS: ${bienSo}<br>
+            <b>Giá trị BH:</b> ${formatTien(giaTriXe)}
+            ${hinoText}
+        `;
+
+        document.getElementById('txtChiTietPhi').innerHTML = `
+            <li>Cơ bản (${(tyLeCoBan*100).toFixed(3)}%): ${formatTien(phiCoBanTien)}</li>
+            <li>BS02 (${(tyLeBS02*100).toFixed(3)}%): ${formatTien(giaTriXe * tyLeBS02)}</li>
+            <li>BS05 (${(tyLeBS05*100).toFixed(3)}%): ${formatTien(giaTriXe * tyLeBS05)}</li>
+            <li>BS06 (${(tyLeBS06*100).toFixed(3)}%): ${formatTien(giaTriXe * tyLeBS06)}</li>
+        `;
+
+        document.getElementById('txtTongPhi').innerText = `TỔNG PHÍ: ${formatTien(tongThanhToan)} (ĐÃ GỒM VAT)`;
+        document.getElementById('txtPhiSan').innerText = `* Cảnh báo nội bộ: Phí thấp nhất (Sàn ${heSoSan*100}%) không dưới ${formatTien(phiSan)} (Đã gồm VAT).`;
+
+        // TẠO BẢN CHÀO PHÍ WORD
+        dataExport = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Bản chào phí</title></head>
+            <body style="font-family: Arial;">
+                <h2 style="text-align: center; color: #0056b3;">BẢN CHÀO PHÍ BẢO HIỂM VẬT CHẤT XE Ô TÔ</h2>
+                <p>Kính gửi Quý Khách hàng,</p>
+                <p>PTI Quảng Ninh xin gửi bản chào phí bảo hiểm cho phương tiện của Quý khách như sau:</p>
+                <h3>I. THÔNG TIN PHƯƠNG TIỆN</h3>
+                <ul>
+                    <li><b>Nhóm xe:</b> ${loaiXeText}</li>
+                    <li><b>Hãng/Model xe:</b> ${modelXe}</li>
+                    <li><b>Biển kiểm soát:</b> ${bienSo}</li>
+                    <li><b>Năm sản xuất:</b> ${namSX}</li>
+                    <li><b>Số tiền bảo hiểm (Giá trị xe):</b> ${formatTien(giaTriXe)}</li>
+                </ul>
+                <h3>II. CHI TIẾT PHÍ BẢO HIỂM</h3>
+                <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+                    <tr style="background-color: #f2f2f2;"><th>Nội dung</th><th>Tỷ lệ phí (%)</th><th>Thành tiền (VNĐ)</th></tr>
+                    <tr><td>Phí cơ bản ${isHino ? "(Bao gồm +5% HINO)" : ""}</td><td>${(tyLeCoBan*100).toFixed(3)}%</td><td>${formatTien(phiCoBanTien)}</td></tr>
+                    <tr><td>Phụ phí BS02 (Thay mới)</td><td>${(tyLeBS02*100).toFixed(3)}%</td><td>${formatTien(giaTriXe * tyLeBS02)}</td></tr>
+                    <tr><td>Phụ phí BS05 (Chính hãng)</td><td>${(tyLeBS05*100).toFixed(3)}%</td><td>${formatTien(giaTriXe * tyLeBS05)}</td></tr>
+                    <tr><td>Phụ phí BS06 (Thủy kích)</td><td>${(tyLeBS06*100).toFixed(3)}%</td><td>${formatTien(giaTriXe * tyLeBS06)}</td></tr>
+                    <tr style="font-weight: bold; color: red;"><td>TỔNG THANH TOÁN (ĐÃ GỒM VAT)</td><td>${(tongTyLe*100).toFixed(3)}%</td><td>${formatTien(tongThanhToan)}</td></tr>
+                </table>
+                <p><i>Bản chào phí có giá trị tham khảo. Mọi chi tiết xin liên hệ chuyên viên tư vấn.</i></p>
+                <p><b>Trân trọng,<br>Đại diện PTI Quảng Ninh</b></p>
+            </body>
+            </html>
+        `;
+    }
+
+    function xuatFileWord() {
+        if (!dataExport) return;
+        var blob = new Blob(['\ufeff', dataExport], { type: 'application/msword' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = 'Ban_Chao_Phi_PTI.doc'; 
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>
